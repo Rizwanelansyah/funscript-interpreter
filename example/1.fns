@@ -1,0 +1,53 @@
+let age = 46;
+age = 23;
+
+if age >= 18: {
+    print "you are 18+";
+    print "Ok"
+} 
+else if (age > 20): print "unreachable"
+else if (age < 10): print "not are 9-"
+else if (age == 13): print "get out you"
+else print "nah...";
+
+print if false: {
+  age = "Truuuuuuuuue"
+} else {
+  age = 1234
+};
+
+print "hello " + {
+  if false: age 
+  else if true: "Other"
+  else "Another"
+};
+
+let i = 1;
+print while i <= 10: {
+  print "Loop#" + i;
+  i = i + 1;
+  return i;
+  print "end";
+};
+
+print {
+  return 1;
+  print "asdadasd";
+  4
+};
+
+let j = 0;
+print "End: " + :end: while j <= 5: {
+  let k = 0;
+  :second: while k < 10: {
+    k = k + 1;
+    if j == 2 && k == 2: break:end nil;
+    if k % 2 == 0: return nil;
+    print "J: " + j + ", K: " + k;
+  };
+
+  j = j + 1;
+};
+
+print j;
+
