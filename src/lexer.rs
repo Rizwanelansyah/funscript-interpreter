@@ -146,6 +146,44 @@ pub fn lex(code: &str) -> Vec<Token> {
             col = 1;
             row += 1;
             i += 1;
+        } else if src[i] == '#' {
+            let mut hashtag_count = 1;
+            i += 1;
+            while src.len() > i && src[i] == '#' {
+                hashtag_count += 1;
+                i += 1;
+            }
+
+            if hashtag_count > 2 {
+                let mut end_count = 0;
+                let mut last_match = false;
+                while src.len() > i && end_count != hashtag_count {
+                    if src[i] == '#' && last_match {
+                        end_count += 1;
+                    } else if src[i] == '#' {
+                        end_count = 1;
+                        last_match = true;
+                    } else {
+                        last_match = false;
+                    }
+                    if src[i] == '\n' {
+                        col = 0;
+                        row += 1;
+                    }
+                    col += 1;
+                    i += 1;
+                }
+                while src.len() > i && src[i] == '#' {
+                    i += 1;
+                }
+            } else {
+                while src.len() > i && src[i] != '\n' {
+                    i += 1;
+                }
+                i += 1;
+                col = 1;
+                row += 1;
+            }
         } else if src[i].is_whitespace() {
             col += 1;
             i += 1

@@ -80,11 +80,7 @@ impl Parser {
     }
 
     pub fn parse_stmt(&mut self) -> Result<Stmt, String> {
-        if cur!(self) == ident!("print") {
-            self.i += 1;
-            let expr = self.parse_expr(1)?;
-            return Ok(Stmt::Print(expr));
-        } else if cur!(self) == ident!("let") && off!(self; 1).is("ident") {
+        if cur!(self) == ident!("let") && off!(self; 1).is("ident") {
             self.i += 1;
             let name = cur!(self);
             self.i += 1;
@@ -94,21 +90,6 @@ impl Parser {
                 expr = self.parse_expr(1)?;
             }
             return Ok(Stmt::VariableDefinition { name, expr });
-        } else if cur!(self) == ident!("return") {
-            self.i += 1;
-            let expr = self.parse_expr(1)?;
-            return Ok(Stmt::Return(expr));
-        } else if cur!(self) == ident!("break") {
-            self.i += 1;
-            if cur!(self) == sym!(":") && off!(self; 1).is("ident") {
-                self.i += 1;
-                let lable = cur!(self);
-                self.i += 1;
-                let expr = self.parse_expr(1)?;
-                return Ok(Stmt::Break(lable, expr));
-            }
-            let expr = self.parse_expr(1)?;
-            return Ok(Stmt::Break(Token::Eof, expr));
         }
         let expr = self.parse_expr(1)?;
         Ok(Stmt::Expr(expr))
@@ -130,10 +111,15 @@ impl Parser {
             return self.parse_conditional();
         } else if cur!(self) == ident!("while") {
             return self.parse_loop();
-        } else if cur!(self) == sym!(":") && off!(self; 1).is("ident") && off!(self; 2) == sym!(":")
-        {
-            return self.parse_labled();
-        }
+        } else if cur!(self) == ident!("print") {
+            self.i += 1;
+            let expr = self.parse_expr(1)?;
+            return Ok(Expr::Print(Box::new(expr)));
+        }  else if cur!(self) == ident!("prompt") {
+            self.i += 1;
+            let expr = self.parse_expr(1)?;
+            return Ok(Expr::Prompt(Box::new(expr)));
+        } 
 
         let mut val: Option<Expr> = None;
         if match_for!(&cur!(self) => sym!("-"), sym!("!")) {
@@ -205,18 +191,6 @@ impl Parser {
                 loc: (pos.row(), pos.col()),
             })
         }
-    }
-
-    pub fn parse_labled(&mut self) -> Result<Expr, String> {
-        self.i += 1;
-        let id = cur!(self);
-        self.i += 2;
-        if cur!(self) == ident!("if") {
-            return Ok(Expr::Labled(id, Box::new(self.parse_conditional()?)));
-        } else if cur!(self) == ident!("while") {
-            return Ok(Expr::Labled(id, Box::new(self.parse_loop()?)));
-        }
-        Ok(Expr::Labled(id, Box::new(Expr::Block(self.parse_block()?))))
     }
 
     pub fn parse_loop(&mut self) -> Result<Expr, String> {
@@ -298,15 +272,14 @@ pub struct Block {
 #[derive(Debug, Clone)]
 pub enum Stmt {
     VariableDefinition { name: Token, expr: Expr },
-    Print(Expr),
     Expr(Expr),
-    Return(Expr),
-    Break(Token, Expr),
     Empty,
 }
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Print(Box<Expr>),
+    Prompt(Box<Expr>),
     Term(Term),
     Bin {
         lhs: Box<Expr>,
@@ -333,7 +306,6 @@ pub enum Expr {
         body: Box<Stmt>,
         loc: (usize, usize),
     },
-    Labled(Token, Box<Expr>),
 }
 
 #[derive(Debug, Clone)]

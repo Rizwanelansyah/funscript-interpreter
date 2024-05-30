@@ -1,53 +1,71 @@
+# some comments
+
+# print
+print "Hello World!"; # this is comment too
+
+###
+this
+is
+multiline
+comment
+the start tag must be less or equal end tag
+### print "Hello"; # this print work!
+
+# define variable
+# all statement must bed end with
+# semicolon (except for end of block)
 let age = 46;
+print age;
+
+# let name = prompt "Your Name:";
+# print "Hello " + name;
+
+# change variable
 age = 23;
 
+# condition must return boolean value
+# this is error
+###
+if 1: {
+  print "This Not Work";
+};
+###
+
+if true: {
+  print "Some Msg";
+};
+# can be shorten to
+if true: print "Some Msg";
+
+# if-else
 if age >= 18: {
     print "you are 18+";
-    print "Ok"
-} 
-else if (age > 20): print "unreachable"
+} else if (age > 20): print "unreachable"
 else if (age < 10): print "not are 9-"
 else if (age == 13): print "get out you"
 else print "nah...";
 
+# conditional can return a value
+# if statement doesn't end with semicolon
+# the statement return the value
+# use semicolon if you want the statement return nil
 print if false: {
   age = "Truuuuuuuuue"
 } else {
-  age = 1234
+  1234
 };
 
+# create a block
 print "hello " + {
   if false: age 
   else if true: "Other"
   else "Another"
 };
 
+# while loop
 let i = 1;
 print while i <= 10: {
   print "Loop#" + i;
   i = i + 1;
-  return i;
-  print "end";
+  "END"
 };
-
-print {
-  return 1;
-  print "asdadasd";
-  4
-};
-
-let j = 0;
-print "End: " + :end: while j <= 5: {
-  let k = 0;
-  :second: while k < 10: {
-    k = k + 1;
-    if j == 2 && k == 2: break:end nil;
-    if k % 2 == 0: return nil;
-    print "J: " + j + ", K: " + k;
-  };
-
-  j = j + 1;
-};
-
-print j;
-

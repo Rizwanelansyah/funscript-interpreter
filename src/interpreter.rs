@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Write;
 
 use crate::{
     error,
@@ -25,9 +26,7 @@ pub type Env = HashMap<String, Value>;
 pub struct Interpreter {
     builtin: Env,
     envs: Vec<Env>,
-    lables: HashMap<String, usize>,
     error: bool,
-    last_loop: usize,
 }
 
 impl Interpreter {
@@ -36,9 +35,7 @@ impl Interpreter {
         Self {
             builtin,
             envs: vec![env! {}],
-            lables: HashMap::new(),
             error: false,
-            last_loop: 0,
         }
     }
 
@@ -68,10 +65,6 @@ impl Interpreter {
 
     pub fn exec_stmt(&mut self, stmt: &Stmt) -> Result<Value, String> {
         match stmt {
-            Stmt::Print(expr) => {
-                println!("{}", self.exec_expr(expr)?.str());
-                Ok(Value::Nil)
-            }
             Stmt::Expr(expr) => self.exec_expr(expr),
             Stmt::VariableDefinition { name, expr } => {
                 if self.envs.last().unwrap().get(&name.value()).is_some() {
@@ -87,39 +80,25 @@ impl Interpreter {
                 Ok(Value::Nil)
             }
             Stmt::Empty => Ok(Value::Nil),
-            Stmt::Return(expr) => {
-                self.envs.pop();
-                Ok(self.exec_expr(expr)?)
-            }
-            Stmt::Break(lable, expr) => {
-                let len = if *lable == Token::Eof {
-                    if self.last_loop == 0 {
-                        return Err(format!(
-                            "at {}:{} => no loop avaible",
-                            lable.row(),
-                            lable.col()
-                        ));
-                    } else {
-                        self.last_loop
-                    }
-                } else if let Some(v) = self.lables.get(&lable.value()) {
-                    *v
-                } else {
-                    return Err(format!(
-                        "at {}:{} => unknown lable with name '{}'",
-                        lable.row(),
-                        lable.col(),
-                        lable.value()
-                    ));
-                };
-                self.envs.resize(len + 1, env! {});
-                Ok(self.exec_expr(expr)?)
-            }
         }
     }
 
     pub fn exec_expr(&mut self, expr: &Expr) -> Result<Value, String> {
         match expr {
+            Expr::Print(expr) => {
+                println!("{}", self.exec_expr(expr)?.str());
+                Ok(Value::Nil)
+            }
+            Expr::Prompt(expr) => {
+                print!("{}", self.exec_expr(expr)?.str());
+                std::io::stdout().flush();
+                let mut result = String::new();
+                match std::io::stdin().read_line(&mut result) {
+                    Ok(_) => {},
+                    Err(e) => return Err(e.to_string()),
+                }
+                return Ok(Value::String(result))
+            },
             Expr::Term(term) => self.exec_term(term),
             Expr::Bin { lhs, op, rhs } => match op.value().as_str() {
                 "+" => match (&self.exec_expr(lhs)?, &self.exec_expr(rhs)?) {
@@ -309,8 +288,7 @@ impl Interpreter {
                     name.col(),
                     name.value()
                 ))
-            }
-
+            },
             Expr::Block(blk) => {
                 self.envs.push(env! {});
                 let len = self.envs.len();
@@ -339,13 +317,11 @@ impl Interpreter {
                         if b {
                             ret = self.exec_stmt(body)?;
                             if self.envs.len() < len {
-                                self.envs.pop();
                                 return Ok(ret);
                             }
                         } else {
                             ret = self.exec_stmt(else_block)?;
                             if self.envs.len() < len {
-                                self.envs.pop();
                                 return Ok(ret);
                             }
                         }
@@ -363,9 +339,6 @@ impl Interpreter {
             }
             Expr::LoopExpression { cond, body, loc } => {
                 self.envs.push(env! {});
-                let last = self.last_loop;
-                let len = self.envs.len() - 1;
-                self.last_loop = len;
                 let mut ret = Value::Nil;
 
                 while match self.exec_expr(cond)? {
@@ -378,24 +351,10 @@ impl Interpreter {
                     }
                 } {
                     ret = self.exec_stmt(body)?;
-                    if self.envs.len() - 1 < len {
-                        return Ok(ret);
-                    }
                 }
 
                 self.envs.pop();
-                self.last_loop = last;
                 Ok(ret)
-            }
-            Expr::Labled(id, expr) => {
-                self.envs.push(env! {});
-                self.lables.insert(id.value(), self.envs.len());
-
-                let ret = self.exec_expr(expr);
-
-                self.lables.remove(&id.value());
-                self.envs.pop();
-                ret
             }
         }
     }
